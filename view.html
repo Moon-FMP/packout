@@ -117,7 +117,7 @@ function loadPayload(){
   var h=location.hash.replace(/^#/,'');
   if(!h) return null;
   try{
-    var json=LZString.decompressFromEncodedURIComponent(h);
+    var json=LZString.decompressFromBase64(decodeURIComponent(h));
     if(!json) return null;
     return JSON.parse(json);
   }catch(e){ return null; }
