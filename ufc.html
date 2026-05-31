@@ -88,7 +88,7 @@
 <header>
   <div class="brand"><h1>Full<b>Moon</b> · UFC</h1></div>
   <div class="gig-sub">Budget V4.9.1 · auto-packlist</div>
-  <div class="tabbar"><button class="tb active" id="tbList">Load-Out</button><button class="tb" id="tbRack">Rack</button></div>
+  <div class="tabbar"><button class="tb active" id="tbList">Load-Out</button><button class="tb" id="tbRack">Rack</button><button class="tb" id="tbSubs">Sub-Rents</button></div>
   <div class="progwrap" id="progwrap">
     <div class="progtop"><span class="lab">Packed</span><span class="num"><b id="pdone">0</b> / <span id="ptot">0</span></span></div>
     <div class="bar"><i id="barfill"></i></div>
@@ -97,6 +97,7 @@
 <main>
   <div class="view" id="view-list"><div id="list"></div></div>
   <div class="view" id="view-rack" style="display:none"><div id="racks"></div></div>
+  <div class="view" id="view-subs" style="display:none"><div id="subs"></div></div>
 </main>
 <div class="gate" id="gate">
   <button class="roll" id="roll" disabled><span id="rollmain">Locked</span><span class="rsub" id="rollsub">Check every item to roll</span></button>
@@ -110,6 +111,7 @@
 <script>
 var DATA=[{"cat":"AUDIO · MAINS","items":[{"nm":"LAcoustics Syvva HI+LOW","qty":"4","note":""}]},{"cat":"AUDIO · SUBWOOFER","items":[{"nm":"LAcoustics SB15","qty":"2","note":""}]},{"cat":"AUDIO · WIRELESS","items":[{"nm":"Axient Wireless Dual Kit w/ Handheld+Belt+Lav","qty":"1","note":""}]},{"cat":"AUDIO · CONSOLES","items":[{"nm":"Behringer XRack","qty":"1","note":"Attn nick no console was specified"}]},{"cat":"AUDIO · MICS","items":[{"nm":"Earthworks Podium Microphone","qty":"1","note":""}]},{"cat":"AUDIO · RIGGING","items":[{"nm":"Syva Apple Box","qty":"2","note":"UFC send: 2"},{"nm":"Boom Mic Stand","qty":"1","note":"UFC send: 1"},{"nm":"Straight Mic Stand","qty":"1","note":"UFC send: 1"}]},{"cat":"AUDIO · MIC PACKS","items":[{"nm":"Small — Speech / Podium","qty":"1","note":"2–4 mics, stands, DIs"}]},{"cat":"AUDIO · CABLE PACKS","items":[{"nm":"Medium — Full Stage","qty":"1","note":"Full snake, sub runs, monitor sends"}]},{"cat":"LIGHTING · MOVERS","items":[{"nm":"Mythos 2","qty":"4","note":"UFC send: 4"},{"nm":"Platinum Beam 5R Extreme","qty":"6","note":"UFC send: 6"}]},{"cat":"LIGHTING · BLINDERS","items":[{"nm":"Showline Nitro 510c","qty":"4","note":"UFC send: 4"}]},{"cat":"LIGHTING · LEDs","items":[{"nm":"SixPar100","qty":"32","note":"UFC send: 32  own: 17  →  To Rent = 15"},{"nm":"SourceFour LED","qty":"8","note":"UFC send: 8"}]},{"cat":"LIGHTING · CONSOLES / CONTROL","items":[{"nm":"Node Rack #1","qty":"1","note":"UFC send: 1"}]},{"cat":"LIGHTING · MISC","items":[{"nm":"Sch. 40 Baseplate","qty":"4","note":"UFC send: 4"}]},{"cat":"LIGHTING · RIGGING — LIGHTING SPECIFIC","items":[{"nm":"Sch. 40 Baseplate 50lb","qty":"4","note":"UFC send: 4"},{"nm":"4' Sch. 40 w/ coupler","qty":"4","note":"UFC send: 4"},{"nm":"10' Sch. 40 w/ coupler","qty":"4","note":"UFC send: 4"},{"nm":"GT 30\"x30\" Baseplates for 12\"","qty":"6","note":"UFC send: 6 → To Rent=1"}]},{"cat":"LIGHTING · CABLE PACKS","items":[{"nm":"Medium — Full Rig","qty":"1","note":"DMX + power, feeder to distro"}]},{"cat":"VIDEO · LED WALL","items":[{"nm":"500x1000mm LED Wall Panel","qty":"48","note":""},{"nm":"Novastar VX6s","qty":"1","note":""}]},{"cat":"VIDEO · SWITCHING / CONVERTERS","items":[{"nm":"ATEM 1 M/E","qty":"1","note":""},{"nm":"UpDownCross","qty":"2","note":""}]},{"cat":"VIDEO · CABLE PACKS","items":[{"nm":"Medium — Full Rig","qty":"1","note":"Multi-source, LED wall cabling"}]},{"cat":"POWER · SOCAPEX","items":[{"nm":"Socapex 50'","qty":"1","note":""},{"nm":"Socapex 100'","qty":"4","note":""},{"nm":"Socapex 175'","qty":"1","note":""},{"nm":"Socapex Fanout","qty":"5","note":""}]},{"cat":"POWER · FEEDER / CAMLOK","items":[{"nm":"10' Banded","qty":"1","note":""},{"nm":"50' Banded","qty":"3","note":""}]},{"cat":"POWER · DISTRIBUTION","items":[{"nm":"400a Socapex/L21-30/Edison Distro","qty":"1","note":""}]},{"cat":"POWER · CABLE PACKS","items":[{"nm":"Medium — Multi-Zone","qty":"1","note":"Multi-feed, distro, socapex"}]}];
 var RACKS=[];
+var SUBS=[{"cat":"LIGHTING","items":[{"nm":"SixPar100","qty":"15","note":"shortfall · UFC send: 32  own: 17  →  To Rent = 15"},{"nm":"GT 30\"x30\" Baseplates for 12\"","qty":"1","note":"shortfall · UFC send: 6 → To Rent=1"},{"nm":"SixPar100 (15 unit overflow)","qty":"15","note":"vendor: TBD — need vendor quote"}]},{"cat":"VIDEO","items":[{"nm":"1-ton CM Chain Hoist 80ft","qty":"4","note":"vendor: Delicate Productions"},{"nm":"2t Beam Clamp","qty":"4","note":"vendor: Delicate Productions"},{"nm":"Tyler Truss GT 8ft","qty":"3","note":"vendor: Darvik Productions"},{"nm":"Chain Hoist Controller + cable pkg","qty":"1","note":"vendor: Delicate Productions"}]},{"cat":"POWER","items":[{"nm":"50' Banded","qty":"2","note":"shortfall"},{"nm":"50' Banded (2-unit overflow)","qty":"2","note":"vendor: TBD — Sunbelt MSP Quote"},{"nm":"Transformer 440v→220v 400a","qty":"1","note":"vendor: TBD — Sunbelt MSP Quote"}]}];
 var STORE_KEY="fmp-packout-ufc";
 (function(){
   var list=document.getElementById('list');
@@ -194,20 +196,49 @@ var STORE_KEY="fmp-packout-ufc";
   }
   renderRacks();
 
-  // ---- TAB SWITCHING ----
-  var tbList=document.getElementById('tbList'),tbRack=document.getElementById('tbRack');
-  var vList=document.getElementById('view-list'),vRack=document.getElementById('view-rack'),pw=document.getElementById('progwrap'),gate=document.getElementById('gate');
+  // ---- SUB-RENTS ----
+  var subsEl=document.getElementById('subs');
+  var sstate={}; try{var ss=localStorage.getItem(STORE_KEY+'-subs');if(ss)sstate=JSON.parse(ss);}catch(e){}
+  function ssave(){try{localStorage.setItem(STORE_KEY+'-subs',JSON.stringify(sstate));}catch(e){}}
+  if(!SUBS.length){ subsEl.innerHTML='<div class="empty">No sub-rentals on this gig.</div>'; }
+  SUBS.forEach(function(group,gi){
+    var cat=document.createElement('section');cat.className='cat';
+    var head=document.createElement('div');head.className='cathead';
+    head.innerHTML='<span class="cattick"></span><span class="ct">'+esc(group.cat)+'</span><span class="cn"><b class="cdone">0</b>/'+group.items.length+'</span><span class="chev">▼</span>';
+    cat.appendChild(head);
+    var items=document.createElement('div');items.className='items';
+    group.items.forEach(function(it,ii){
+      var k='s'+gi+'_'+ii;
+      var row=document.createElement('div');row.className='item';
+      var v=it.note?'<div class="note">'+esc(it.note)+'</div>':'';
+      row.innerHTML='<span class="box"></span><span class="qty">'+esc(it.qty)+'</span><span class="meta"><div class="nm">'+esc(it.nm)+'</div>'+v+'</span>';
+      if(sstate[k])row.className='item checked';
+      row.addEventListener('click',function(){var on=!row.classList.contains('checked');row.classList.toggle('checked',on);sstate[k]=on;ssave();var c=0;items.querySelectorAll('.item').forEach(function(x){if(x.classList.contains('checked'))c++;});head.querySelector('.cdone').textContent=c;cat.classList.toggle('done',c===group.items.length);if(navigator.vibrate)navigator.vibrate(on?18:8);});
+      items.appendChild(row);
+    });
+    cat.appendChild(items);
+    head.addEventListener('click',function(){cat.classList.toggle('collapsed');});
+    subsEl.appendChild(cat);
+  });
+
+  // ---- TABS ----
+  var tbList=document.getElementById('tbList'),tbRack=document.getElementById('tbRack'),tbSubs=document.getElementById('tbSubs');
+  var vList=document.getElementById('view-list'),vRack=document.getElementById('view-rack'),vSubs=document.getElementById('view-subs'),pw=document.getElementById('progwrap'),gate=document.getElementById('gate');
+  if(!RACKS.length) tbRack.style.display='none';
+  if(!SUBS.length) tbSubs.style.display='none';
   function showView(v){
-    var isL=(v==='list');
-    vList.style.display=isL?'block':'none';
-    vRack.style.display=isL?'none':'block';
-    pw.style.display=isL?'block':'none';
-    gate.style.display=isL?'block':'none';
-    tbList.className='tb'+(isL?' active':'');
-    tbRack.className='tb'+(isL?'':' active');
+    vList.style.display=v==='list'?'block':'none';
+    vRack.style.display=v==='rack'?'block':'none';
+    vSubs.style.display=v==='subs'?'block':'none';
+    pw.style.display=v==='list'?'block':'none';
+    gate.style.display=v==='list'?'block':'none';
+    tbList.className='tb'+(v==='list'?' active':'');
+    tbRack.className='tb'+(v==='rack'?' active':'');
+    tbSubs.className='tb'+(v==='subs'?' active':'');
   }
   tbList.addEventListener('click',function(){showView('list');});
   tbRack.addEventListener('click',function(){showView('rack');});
+  tbSubs.addEventListener('click',function(){showView('subs');});
 })();
 </script>
 </body>

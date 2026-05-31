@@ -178,6 +178,9 @@ function parseSheet(rows, tabName){
     var aVal=String(row[catCol]==null?'':row[catCol]).trim();
     var bVal=String(row[itemCol]==null?'':row[itemCol]).trim();
     if(/^FINAL CHECKLIST$/i.test(aVal)) break;
+    if(/^RACK ?BUILD$/i.test(aVal)) break;            // rack block embedded below -> parseRacks handles it
+    var _rh=false; for(var _c=0;_c<row.length;_c++){ if(String(row[_c]==null?'':row[_c]).trim().toUpperCase()==='COMPONENT'){_rh=true;break;} }
+    if(_rh) break;
     if(/^PACK COLOR$/i.test(aVal)) continue;
     if(aVal && aVal.toLowerCase()!=='item' && !dashes.test(aVal)) cur=aVal;
     if(bVal && bVal.toLowerCase()!=='item' && !dashes.test(bVal)){
@@ -185,7 +188,7 @@ function parseSheet(rows, tabName){
       if(inc.inc){
         var catName=(cur||'Items'), note=String(row[noteCol]==null?'':row[noteCol]).trim();
         if(note.toLowerCase()==='notes' || dashes.test(note)) note='';
-        var key=tabName+' · '+catName;
+        var key=/^PACK ?LIST$/i.test(tabName)?catName:(tabName+' · '+catName);
         if(!gmap[key]){ gmap[key]={cat:key,items:[]}; groups.push(gmap[key]); }
         gmap[key].items.push({nm:bVal,qty:inc.qty,note:note}); total++;
       }
@@ -274,8 +277,11 @@ function collectData(){
       var rows=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:null});
       if(isRackTab(name)){ var rp=parseRacks(rows); racks=racks.concat(rp.racks); return; }
       var p=parseSheet(rows,name.trim().toUpperCase());
-      if(p.skipped){ skipped.push(name); return; }
-      all=all.concat(p.groups); total+=p.total; if(p.total>0) tabsUsed.push(name);
+      var rp2=parseRacks(rows);   // also catch a rack block embedded in the same sheet
+      var got=false;
+      if(!p.skipped){ all=all.concat(p.groups); total+=p.total; if(p.total>0) tabsUsed.push(name); got=true; }
+      if(!rp2.skipped){ racks=racks.concat(rp2.racks); got=true; }
+      if(!got) skipped.push(name);
     });
   }
   return {data:all,total:total,tabsUsed:tabsUsed,skipped:skipped,racks:racks};
@@ -285,9 +291,10 @@ function collectData(){
 function escHtml(s){ return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
 function slug(s){ return (s||'packout').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,40)||'packout'; }
 
-function generateStandaloneHTML(title, subtitle, data, racks){
+function generateStandaloneHTML(title, subtitle, data, racks, subs){
   var dataJSON=JSON.stringify(data).replace(/</g,'\\u003c');
   var racksJSON=JSON.stringify(racks||[]).replace(/</g,'\\u003c');
+  var subsJSON=JSON.stringify(subs||[]).replace(/</g,'\\u003c');
   var storeKey='fmp-packout-'+slug(title);
   var t=escHtml(title||'Pack-Out'), sub=escHtml(subtitle||'');
   return `<!DOCTYPE html>
@@ -380,7 +387,7 @@ function generateStandaloneHTML(title, subtitle, data, racks){
 <header>
   <div class="brand"><h1>Full<b>Moon</b> · ${t}</h1></div>
   <div class="gig-sub">${sub}</div>
-  <div class="tabbar"><button class="tb active" id="tbList">Audio</button><button class="tb" id="tbRack">Rack</button></div>
+  <div class="tabbar"><button class="tb active" id="tbList">Load-Out</button><button class="tb" id="tbRack">Rack</button><button class="tb" id="tbSubs">Sub-Rents</button></div>
   <div class="progwrap" id="progwrap">
     <div class="progtop"><span class="lab">Packed</span><span class="num"><b id="pdone">0</b> / <span id="ptot">0</span></span></div>
     <div class="bar"><i id="barfill"></i></div>
@@ -389,6 +396,7 @@ function generateStandaloneHTML(title, subtitle, data, racks){
 <main>
   <div class="view" id="view-list"><div id="list"></div></div>
   <div class="view" id="view-rack" style="display:none"><div id="racks"></div></div>
+  <div class="view" id="view-subs" style="display:none"><div id="subs"></div></div>
 </main>
 <div class="gate" id="gate">
   <button class="roll" id="roll" disabled><span id="rollmain">Locked</span><span class="rsub" id="rollsub">Check every item to roll</span></button>
@@ -402,6 +410,7 @@ function generateStandaloneHTML(title, subtitle, data, racks){
 <script>
 var DATA=${dataJSON};
 var RACKS=${racksJSON};
+var SUBS=${subsJSON};
 var STORE_KEY=${JSON.stringify(storeKey)};
 (function(){
   var list=document.getElementById('list');
@@ -486,20 +495,49 @@ var STORE_KEY=${JSON.stringify(storeKey)};
   }
   renderRacks();
 
-  // ---- TAB SWITCHING ----
-  var tbList=document.getElementById('tbList'),tbRack=document.getElementById('tbRack');
-  var vList=document.getElementById('view-list'),vRack=document.getElementById('view-rack'),pw=document.getElementById('progwrap'),gate=document.getElementById('gate');
+  // ---- SUB-RENTS ----
+  var subsEl=document.getElementById('subs');
+  var sstate={}; try{var ss=localStorage.getItem(STORE_KEY+'-subs');if(ss)sstate=JSON.parse(ss);}catch(e){}
+  function ssave(){try{localStorage.setItem(STORE_KEY+'-subs',JSON.stringify(sstate));}catch(e){}}
+  if(!SUBS.length){ subsEl.innerHTML='<div class="empty">No sub-rentals on this gig.</div>'; }
+  SUBS.forEach(function(group,gi){
+    var cat=document.createElement('section');cat.className='cat';
+    var head=document.createElement('div');head.className='cathead';
+    head.innerHTML='<span class="cattick"></span><span class="ct">'+esc(group.cat)+'</span><span class="cn"><b class="cdone">0</b>/'+group.items.length+'</span><span class="chev">▼</span>';
+    cat.appendChild(head);
+    var items=document.createElement('div');items.className='items';
+    group.items.forEach(function(it,ii){
+      var k='s'+gi+'_'+ii;
+      var row=document.createElement('div');row.className='item';
+      var v=it.note?'<div class="note">'+esc(it.note)+'</div>':'';
+      row.innerHTML='<span class="box"></span><span class="qty">'+esc(it.qty)+'</span><span class="meta"><div class="nm">'+esc(it.nm)+'</div>'+v+'</span>';
+      if(sstate[k])row.className='item checked';
+      row.addEventListener('click',function(){var on=!row.classList.contains('checked');row.classList.toggle('checked',on);sstate[k]=on;ssave();var c=0;items.querySelectorAll('.item').forEach(function(x){if(x.classList.contains('checked'))c++;});head.querySelector('.cdone').textContent=c;cat.classList.toggle('done',c===group.items.length);if(navigator.vibrate)navigator.vibrate(on?18:8);});
+      items.appendChild(row);
+    });
+    cat.appendChild(items);
+    head.addEventListener('click',function(){cat.classList.toggle('collapsed');});
+    subsEl.appendChild(cat);
+  });
+
+  // ---- TABS ----
+  var tbList=document.getElementById('tbList'),tbRack=document.getElementById('tbRack'),tbSubs=document.getElementById('tbSubs');
+  var vList=document.getElementById('view-list'),vRack=document.getElementById('view-rack'),vSubs=document.getElementById('view-subs'),pw=document.getElementById('progwrap'),gate=document.getElementById('gate');
+  if(!RACKS.length) tbRack.style.display='none';
+  if(!SUBS.length) tbSubs.style.display='none';
   function showView(v){
-    var isL=(v==='list');
-    vList.style.display=isL?'block':'none';
-    vRack.style.display=isL?'none':'block';
-    pw.style.display=isL?'block':'none';
-    gate.style.display=isL?'block':'none';
-    tbList.className='tb'+(isL?' active':'');
-    tbRack.className='tb'+(isL?'':' active');
+    vList.style.display=v==='list'?'block':'none';
+    vRack.style.display=v==='rack'?'block':'none';
+    vSubs.style.display=v==='subs'?'block':'none';
+    pw.style.display=v==='list'?'block':'none';
+    gate.style.display=v==='list'?'block':'none';
+    tbList.className='tb'+(v==='list'?' active':'');
+    tbRack.className='tb'+(v==='rack'?' active':'');
+    tbSubs.className='tb'+(v==='subs'?' active':'');
   }
   tbList.addEventListener('click',function(){showView('list');});
   tbRack.addEventListener('click',function(){showView('rack');});
+  tbSubs.addEventListener('click',function(){showView('subs');});
 })();
 <\/script>
 </body>

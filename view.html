@@ -89,7 +89,7 @@
 <header>
   <div class="brand"><h1>Full<b>Moon</b> · <span id="ttl">Pack-Out</span></h1></div>
   <div class="gig-sub" id="sub"></div>
-  <div class="tabbar"><button class="tb active" id="tbList">Audio</button><button class="tb" id="tbRack">Rack</button></div>
+  <div class="tabbar"><button class="tb active" id="tbList">Load-Out</button><button class="tb" id="tbRack">Rack</button><button class="tb" id="tbSubs">Sub-Rents</button></div>
   <div class="progwrap" id="progwrap">
     <div class="progtop"><span class="lab">Packed</span><span class="num"><b id="pdone">0</b> / <span id="ptot">0</span></span></div>
     <div class="bar"><i id="barfill"></i></div>
@@ -98,6 +98,7 @@
 <main>
   <div class="view" id="view-list"><div id="list"></div></div>
   <div class="view" id="view-rack" style="display:none"><div id="racks"></div></div>
+  <div class="view" id="view-subs" style="display:none"><div id="subs"></div></div>
 </main>
 <div class="gate" id="gate">
   <button class="roll" id="roll" disabled><span id="rollmain">Locked</span><span class="rsub" id="rollsub">Check every item to roll</span></button>
@@ -132,7 +133,7 @@ function boot(){
     document.querySelector('.tabbar').style.display='none';
     return;
   }
-  var TITLE=p.t||'Pack-Out', SUB=p.s||'', DATA=p.d||[], RACKS=p.r||[];
+  var TITLE=p.t||'Pack-Out', SUB=p.s||'', DATA=p.d||[], RACKS=p.r||[], SUBS=p.subs||[];
   var STORE_KEY='fmp-packout-'+slug(TITLE);
   document.getElementById('ttl').textContent=TITLE;
   document.getElementById('sub').textContent=SUB;
@@ -218,12 +219,49 @@ function boot(){
   }
   renderRacks();
 
+  // SUB-RENTS
+  var subsEl=document.getElementById('subs');
+  var sstate={}; try{var ss=localStorage.getItem(STORE_KEY+'-subs');if(ss)sstate=JSON.parse(ss);}catch(e){}
+  function ssave(){try{localStorage.setItem(STORE_KEY+'-subs',JSON.stringify(sstate));}catch(e){}}
+  if(!SUBS.length){ subsEl.innerHTML='<div class="empty">No sub-rentals on this gig.</div>'; }
+  SUBS.forEach(function(group,gi){
+    var cat=document.createElement('section');cat.className='cat';
+    var head=document.createElement('div');head.className='cathead';
+    head.innerHTML='<span class="cattick"></span><span class="ct">'+esc(group.cat)+'</span><span class="cn"><b class="cdone">0</b>/'+group.items.length+'</span><span class="chev">▼</span>';
+    cat.appendChild(head);
+    var items=document.createElement('div');items.className='items';
+    group.items.forEach(function(it,ii){
+      var k='s'+gi+'_'+ii;
+      var row=document.createElement('div');row.className='item';
+      var v=it.note?'<div class="note">'+esc(it.note)+'</div>':'';
+      row.innerHTML='<span class="box"></span><span class="qty">'+esc(it.qty)+'</span><span class="meta"><div class="nm">'+esc(it.nm)+'</div>'+v+'</span>';
+      if(sstate[k])row.className='item checked';
+      row.addEventListener('click',function(){var on=!row.classList.contains('checked');row.classList.toggle('checked',on);sstate[k]=on;ssave();var c=0;items.querySelectorAll('.item').forEach(function(x){if(x.classList.contains('checked'))c++;});head.querySelector('.cdone').textContent=c;cat.classList.toggle('done',c===group.items.length);if(navigator.vibrate)navigator.vibrate(on?18:8);});
+      items.appendChild(row);
+    });
+    cat.appendChild(items);
+    head.addEventListener('click',function(){cat.classList.toggle('collapsed');});
+    subsEl.appendChild(cat);
+  });
+
   // TABS
-  var tbList=document.getElementById('tbList'),tbRack=document.getElementById('tbRack');
-  var vList=document.getElementById('view-list'),vRack=document.getElementById('view-rack'),pw=document.getElementById('progwrap'),gate=document.getElementById('gate');
-  function showView(v){var isL=(v==='list');vList.style.display=isL?'block':'none';vRack.style.display=isL?'none':'block';pw.style.display=isL?'block':'none';gate.style.display=isL?'block':'none';tbList.className='tb'+(isL?' active':'');tbRack.className='tb'+(isL?'':' active');}
+  var tbList=document.getElementById('tbList'),tbRack=document.getElementById('tbRack'),tbSubs=document.getElementById('tbSubs');
+  var vList=document.getElementById('view-list'),vRack=document.getElementById('view-rack'),vSubs=document.getElementById('view-subs'),pw=document.getElementById('progwrap'),gate=document.getElementById('gate');
+  if(!RACKS.length) tbRack.style.display='none';
+  if(!SUBS.length) tbSubs.style.display='none';
+  function showView(v){
+    vList.style.display=v==='list'?'block':'none';
+    vRack.style.display=v==='rack'?'block':'none';
+    vSubs.style.display=v==='subs'?'block':'none';
+    pw.style.display=v==='list'?'block':'none';
+    gate.style.display=v==='list'?'block':'none';
+    tbList.className='tb'+(v==='list'?' active':'');
+    tbRack.className='tb'+(v==='rack'?' active':'');
+    tbSubs.className='tb'+(v==='subs'?' active':'');
+  }
   tbList.addEventListener('click',function(){showView('list');});
   tbRack.addEventListener('click',function(){showView('rack');});
+  tbSubs.addEventListener('click',function(){showView('subs');});
 }
 boot();
 window.addEventListener('hashchange',function(){location.reload();});
