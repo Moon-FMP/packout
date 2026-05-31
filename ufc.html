@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0a0d0f">
+<title>UFC · Pack-Out</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#0a0d0f;--panel:#14181c;--panel-2:#1b2127;--line:#272f37;--ink:#eef3f6;--ink-dim:#8b97a1;--ink-faint:#5a6670;--amber:#ffb627;--cyan:#34d3e0;--green:#3ddc84;--red:#ff5d54;--disp:"Oswald",system-ui,sans-serif;--body:"Archivo",system-ui,sans-serif;--mono:"JetBrains Mono",ui-monospace,monospace;}
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  body{background:var(--bg);color:var(--ink);font-family:var(--body);min-height:100vh;padding-bottom:150px;-webkit-overflow-scrolling:touch;background-image:radial-gradient(circle at 50% -10%, rgba(255,182,39,.08), transparent 55%);}
+  header{position:sticky;top:0;z-index:50;background:linear-gradient(180deg,#0d1115 70%, rgba(13,17,21,.92));border-bottom:1px solid var(--line);padding:14px 16px 12px;backdrop-filter:blur(8px);}
+  .brand h1{font-family:var(--disp);font-weight:700;font-size:21px;letter-spacing:.05em;text-transform:uppercase;}
+  .brand h1 b{color:var(--amber);}
+  .gig-sub{font-family:var(--mono);font-size:11px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.06em;margin-top:4px;}
+  .tabbar{display:flex;gap:8px;margin-top:12px;}
+  .tb{flex:1;font-family:var(--disp);font-weight:600;font-size:14px;letter-spacing:.05em;text-transform:uppercase;background:var(--panel-2);color:var(--ink-dim);border:1px solid var(--line);border-radius:10px;padding:11px;cursor:pointer;}
+  .tb.active{background:linear-gradient(135deg,var(--amber),#e09a10);color:#1a1200;border-color:var(--amber);}
+  .progwrap{margin-top:12px;}
+  .progtop{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:6px;}
+  .progtop .lab{font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--ink-dim);text-transform:uppercase;}
+  .progtop .num{font-family:var(--disp);font-weight:700;font-size:20px;}
+  .progtop .num b{color:var(--green);}
+  .bar{height:10px;border-radius:6px;background:var(--panel-2);overflow:hidden;border:1px solid var(--line);}
+  .bar i{display:block;height:100%;width:0;border-radius:6px;background:linear-gradient(90deg,var(--amber),var(--green));transition:width .35s cubic-bezier(.4,0,.2,1);}
+  main{padding:8px 12px 0;}
+  .cat{margin-top:12px;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--panel);}
+  .cat.done{border-color:rgba(61,220,132,.4);}
+  .cathead{display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;background:var(--panel-2);user-select:none;}
+  .cathead .ct{font-family:var(--disp);font-weight:600;font-size:16px;letter-spacing:.03em;text-transform:uppercase;flex:1;}
+  .cathead .cn{font-family:var(--mono);font-size:13px;color:var(--ink-dim);font-weight:700;}
+  .cathead .cn b{color:var(--green);}
+  .cathead .chev{color:var(--ink-faint);font-size:14px;transition:transform .25s;}
+  .cat.collapsed .chev{transform:rotate(-90deg);}
+  .cattick{width:20px;height:20px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;flex-shrink:0;}
+  .cat.done .cattick{background:var(--green);border-color:var(--green);}
+  .cat.done .cattick::after{content:"✓";color:#06210f;font-weight:700;font-size:12px;}
+  .items{max-height:7000px;overflow:hidden;transition:max-height .3s ease;}
+  .cat.collapsed .items{max-height:0;}
+  .item{display:flex;align-items:center;gap:14px;padding:16px;border-top:1px solid var(--line);cursor:pointer;min-height:64px;}
+  .item:active{background:var(--panel-2);}
+  .item.checked{background:rgba(61,220,132,.06);}
+  .box{width:30px;height:30px;border-radius:8px;border:2.5px solid var(--ink-faint);flex-shrink:0;display:grid;place-items:center;}
+  .item.checked .box{background:var(--green);border-color:var(--green);}
+  .item.checked .box::after{content:"✓";color:#06210f;font-weight:700;font-size:18px;}
+  .qty{font-family:var(--mono);font-weight:700;font-size:18px;flex-shrink:0;min-width:42px;text-align:center;background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:6px 4px;}
+  .item.checked .qty{color:var(--ink-faint);}
+  .meta{flex:1;min-width:0;}
+  .nm{font-size:17px;font-weight:600;line-height:1.15;}
+  .item.checked .nm{color:var(--ink-dim);text-decoration:line-through;}
+  .note{font-size:12.5px;color:var(--ink-faint);line-height:1.3;margin-top:4px;}
+  .sidetog{display:flex;gap:8px;margin:14px 0 4px;}
+  .sb{flex:1;font-family:var(--disp);font-weight:600;font-size:13px;letter-spacing:.06em;text-transform:uppercase;background:var(--panel-2);color:var(--ink-dim);border:1px solid var(--line);border-radius:9px;padding:10px;cursor:pointer;}
+  .sb.on{border-color:var(--cyan);color:var(--cyan);background:rgba(52,211,224,.08);}
+  .sb.dis{opacity:.4;cursor:default;}
+  .rack{margin-top:12px;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--panel);}
+  .rhead{display:flex;align-items:baseline;justify-content:space-between;padding:13px 16px;background:var(--panel-2);}
+  .rname{font-family:var(--disp);font-weight:700;font-size:18px;text-transform:uppercase;letter-spacing:.03em;color:var(--amber);}
+  .rused{font-family:var(--mono);font-size:12px;color:var(--ink-dim);}
+  .frame{padding:8px;}
+  .ublk{display:flex;align-items:center;gap:10px;padding:0 12px;border-radius:7px;margin-bottom:5px;color:#16202a;cursor:pointer;overflow:hidden;border:1px solid rgba(0,0,0,.18);}
+  .ublk .ord{flex:none;width:20px;height:20px;border-radius:999px;border:1px solid currentColor;font-family:var(--mono);font-size:11px;display:flex;align-items:center;justify-content:center;opacity:.8;}
+  .ublk .bnm{flex:1;font-weight:600;font-size:14px;line-height:1.1;}
+  .ublk .bub{flex:none;font-family:var(--mono);font-weight:700;font-size:13px;opacity:.85;}
+  .ublk.done{opacity:.42;}
+  .ublk.done .bnm{text-decoration:line-through;}
+  .rfree{display:flex;align-items:center;justify-content:center;color:var(--ink-faint);font-family:var(--mono);font-size:12px;border:1px dashed var(--line);border-radius:7px;}
+  .gate{position:fixed;left:0;right:0;bottom:0;z-index:60;padding:14px 14px calc(14px + env(safe-area-inset-bottom));background:linear-gradient(0deg,#0a0d0f 60%, rgba(10,13,15,.6));}
+  .roll{width:100%;border:none;border-radius:16px;padding:18px;cursor:not-allowed;font-family:var(--disp);font-weight:700;font-size:20px;letter-spacing:.1em;text-transform:uppercase;background:var(--panel-2);color:var(--ink-faint);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;gap:12px;}
+  .roll .rsub{font-family:var(--mono);font-size:11px;letter-spacing:.05em;font-weight:500;}
+  .roll.ready{background:linear-gradient(135deg,var(--green),#28b86a);color:#04210f;cursor:pointer;border-color:var(--green);}
+  .reset{background:none;border:none;color:var(--ink-faint);font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;text-align:center;width:100%;margin-top:9px;padding:6px;cursor:pointer;}
+  .cleared{position:fixed;inset:0;z-index:100;display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px;background:radial-gradient(circle at 50% 40%, #0f1f16, #060807 70%);}
+  .cleared.show{display:flex;}
+  .cleared .chk{font-size:58px;margin-bottom:10px;}
+  .cleared .big{font-family:var(--disp);font-weight:700;font-size:12vw;line-height:.95;color:var(--green);text-transform:uppercase;}
+  .cleared .csub{font-family:var(--mono);font-size:14px;color:var(--ink-dim);margin-top:16px;}
+  .cleared button{margin-top:28px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font-family:var(--disp);font-weight:600;font-size:16px;letter-spacing:.06em;text-transform:uppercase;padding:13px 26px;border-radius:12px;cursor:pointer;}
+  .empty{padding:46px 20px;text-align:center;font-family:var(--mono);color:var(--ink-faint);font-size:13px;line-height:1.6;}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><h1>Full<b>Moon</b> · UFC</h1></div>
+  <div class="gig-sub">Budget V4.9.1 · auto-packlist</div>
+  <div class="tabbar"><button class="tb active" id="tbList">Audio</button><button class="tb" id="tbRack">Rack</button></div>
+  <div class="progwrap" id="progwrap">
+    <div class="progtop"><span class="lab">Packed</span><span class="num"><b id="pdone">0</b> / <span id="ptot">0</span></span></div>
+    <div class="bar"><i id="barfill"></i></div>
+  </div>
+</header>
+<main>
+  <div class="view" id="view-list"><div id="list"></div></div>
+  <div class="view" id="view-rack" style="display:none"><div id="racks"></div></div>
+</main>
+<div class="gate" id="gate">
+  <button class="roll" id="roll" disabled><span id="rollmain">Locked</span><span class="rsub" id="rollsub">Check every item to roll</span></button>
+  <button class="reset" id="reset">↺ Reset list for next gig</button>
+</div>
+<div class="cleared" id="cleared">
+  <div class="chk">🚚</div><div class="big">Cleared<br>To Roll</div>
+  <div class="csub">Truck's loaded. Drive safe.</div>
+  <button id="back">← Back to list</button>
+</div>
+<script>
+var DATA=[{"cat":"AUDIO · MAINS","items":[{"nm":"LAcoustics Syvva HI+LOW","qty":"4","note":""}]},{"cat":"AUDIO · SUBWOOFER","items":[{"nm":"LAcoustics SB15","qty":"2","note":""}]},{"cat":"AUDIO · WIRELESS","items":[{"nm":"Axient Wireless Dual Kit w/ Handheld+Belt+Lav","qty":"1","note":""}]},{"cat":"AUDIO · CONSOLES","items":[{"nm":"Behringer XRack","qty":"1","note":"Attn nick no console was specified"}]},{"cat":"AUDIO · MICS","items":[{"nm":"Earthworks Podium Microphone","qty":"1","note":""}]},{"cat":"AUDIO · RIGGING","items":[{"nm":"Syva Apple Box","qty":"2","note":"UFC send: 2"},{"nm":"Boom Mic Stand","qty":"1","note":"UFC send: 1"},{"nm":"Straight Mic Stand","qty":"1","note":"UFC send: 1"}]},{"cat":"AUDIO · MIC PACKS","items":[{"nm":"Small — Speech / Podium","qty":"1","note":"2–4 mics, stands, DIs"}]},{"cat":"AUDIO · CABLE PACKS","items":[{"nm":"Medium — Full Stage","qty":"1","note":"Full snake, sub runs, monitor sends"}]},{"cat":"LIGHTING · MOVERS","items":[{"nm":"Mythos 2","qty":"4","note":"UFC send: 4"},{"nm":"Platinum Beam 5R Extreme","qty":"6","note":"UFC send: 6"}]},{"cat":"LIGHTING · BLINDERS","items":[{"nm":"Showline Nitro 510c","qty":"4","note":"UFC send: 4"}]},{"cat":"LIGHTING · LEDs","items":[{"nm":"SixPar100","qty":"32","note":"UFC send: 32  own: 17  →  To Rent = 15"},{"nm":"SourceFour LED","qty":"8","note":"UFC send: 8"}]},{"cat":"LIGHTING · CONSOLES / CONTROL","items":[{"nm":"Node Rack #1","qty":"1","note":"UFC send: 1"}]},{"cat":"LIGHTING · MISC","items":[{"nm":"Sch. 40 Baseplate","qty":"4","note":"UFC send: 4"}]},{"cat":"LIGHTING · RIGGING — LIGHTING SPECIFIC","items":[{"nm":"Sch. 40 Baseplate 50lb","qty":"4","note":"UFC send: 4"},{"nm":"4' Sch. 40 w/ coupler","qty":"4","note":"UFC send: 4"},{"nm":"10' Sch. 40 w/ coupler","qty":"4","note":"UFC send: 4"},{"nm":"GT 30\"x30\" Baseplates for 12\"","qty":"6","note":"UFC send: 6 → To Rent=1"}]},{"cat":"LIGHTING · CABLE PACKS","items":[{"nm":"Medium — Full Rig","qty":"1","note":"DMX + power, feeder to distro"}]},{"cat":"VIDEO · LED WALL","items":[{"nm":"500x1000mm LED Wall Panel","qty":"48","note":""},{"nm":"Novastar VX6s","qty":"1","note":""}]},{"cat":"VIDEO · SWITCHING / CONVERTERS","items":[{"nm":"ATEM 1 M/E","qty":"1","note":""},{"nm":"UpDownCross","qty":"2","note":""}]},{"cat":"VIDEO · CABLE PACKS","items":[{"nm":"Medium — Full Rig","qty":"1","note":"Multi-source, LED wall cabling"}]},{"cat":"POWER · SOCAPEX","items":[{"nm":"Socapex 50'","qty":"1","note":""},{"nm":"Socapex 100'","qty":"4","note":""},{"nm":"Socapex 175'","qty":"1","note":""},{"nm":"Socapex Fanout","qty":"5","note":""}]},{"cat":"POWER · FEEDER / CAMLOK","items":[{"nm":"10' Banded","qty":"1","note":""},{"nm":"50' Banded","qty":"3","note":""}]},{"cat":"POWER · DISTRIBUTION","items":[{"nm":"400a Socapex/L21-30/Edison Distro","qty":"1","note":""}]},{"cat":"POWER · CABLE PACKS","items":[{"nm":"Medium — Multi-Zone","qty":"1","note":"Multi-feed, distro, socapex"}]}];
+var RACKS=[];
+var STORE_KEY="fmp-packout-ufc";
+(function(){
+  var list=document.getElementById('list');
+  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+  var state={};
+  try{var s=localStorage.getItem(STORE_KEY);if(s)state=JSON.parse(s);}catch(e){}
+  function save(){try{localStorage.setItem(STORE_KEY,JSON.stringify(state));}catch(e){}}
+  function keyOf(c,i){return c.replace(/[^A-Za-z0-9]/g,'')+'_'+i;}
+  var TOTAL=0;
+  if(!DATA.length){ list.innerHTML='<div class="empty">No load-out items matched.<br>Add quantities or tick boxes on your packlist.</div>'; }
+  DATA.forEach(function(group,gi){
+    TOTAL+=group.items.length;
+    var cat=document.createElement('section');cat.className='cat';
+    var head=document.createElement('div');head.className='cathead';
+    head.innerHTML='<span class="cattick"></span><span class="ct">'+esc(group.cat)+'</span><span class="cn"><b class="cdone">0</b>/'+group.items.length+'</span><span class="chev">▼</span>';
+    cat.appendChild(head);
+    var items=document.createElement('div');items.className='items';
+    group.items.forEach(function(it,ii){
+      var k=keyOf(group.cat,ii);
+      var row=document.createElement('div');row.className='item';row.setAttribute('data-key',k);
+      var noteHtml=it.note?'<div class="note">'+esc(it.note)+'</div>':'';
+      row.innerHTML='<span class="box"></span><span class="qty">'+esc(it.qty)+'</span><span class="meta"><div class="nm">'+esc(it.nm)+'</div>'+noteHtml+'</span>';
+      if(state[k])row.className='item checked';
+      row.addEventListener('click',function(){var on=!row.classList.contains('checked');row.classList.toggle('checked',on);state[k]=on;save();refresh();if(navigator.vibrate)navigator.vibrate(on?18:8);});
+      items.appendChild(row);
+    });
+    cat.appendChild(items);
+    head.addEventListener('click',function(){cat.classList.toggle('collapsed');});
+    list.appendChild(cat);
+  });
+  var barfill=document.getElementById('barfill'),pdone=document.getElementById('pdone'),ptot=document.getElementById('ptot'),roll=document.getElementById('roll'),rollmain=document.getElementById('rollmain'),rollsub=document.getElementById('rollsub');
+  ptot.textContent=TOTAL;
+  function refresh(){
+    var done=0;
+    document.querySelectorAll('.cat').forEach(function(cat){var rows=cat.querySelectorAll('.item');var cd=0;rows.forEach(function(r){if(r.classList.contains('checked'))cd++;});cat.querySelector('.cdone').textContent=cd;cat.classList.toggle('done',cd===rows.length&&rows.length>0);done+=cd;});
+    pdone.textContent=done;
+    var pct=TOTAL?Math.round(done/TOTAL*100):0;barfill.style.width=pct+'%';
+    var left=TOTAL-done;
+    if(done===TOTAL&&TOTAL>0){roll.className='roll ready';roll.disabled=false;rollmain.textContent='Roll Out ⮕';rollsub.textContent='All packed · tap to confirm';}
+    else{roll.className='roll';roll.disabled=true;rollmain.textContent='Locked';rollsub.textContent=left+' item'+(left===1?'':'s')+' left to pack';}
+  }
+  refresh();
+  roll.addEventListener('click',function(){if(roll.disabled)return;if(navigator.vibrate)navigator.vibrate([30,40,30]);document.getElementById('cleared').classList.add('show');});
+  document.getElementById('back').addEventListener('click',function(){document.getElementById('cleared').classList.remove('show');});
+  document.getElementById('reset').addEventListener('click',function(){if(!confirm('Clear all checks for the next gig?'))return;state={};save();document.querySelectorAll('.item').forEach(function(r){r.classList.remove('checked');});refresh();});
+
+  // ---- RACK BUILD ----
+  var racksEl=document.getElementById('racks'), side='front';
+  var rearExists=RACKS.some(function(rk){return rk.items.some(function(it){return it.side==='rear';});});
+  var rstate={}; try{var rr=localStorage.getItem(STORE_KEY+'-rack');if(rr)rstate=JSON.parse(rr);}catch(e){}
+  function rsave(){try{localStorage.setItem(STORE_KEY+'-rack',JSON.stringify(rstate));}catch(e){}}
+  function renderRacks(){
+    racksEl.innerHTML='';
+    var tog=document.createElement('div');tog.className='sidetog';
+    tog.innerHTML='<button class="sb '+(side==='front'?'on':'')+'" id="sbFront">Front</button><button class="sb '+(side==='rear'?'on':'')+(rearExists?'':' dis')+'" id="sbRear">Rear'+(rearExists?'':' · empty')+'</button>';
+    racksEl.appendChild(tog);
+    document.getElementById('sbFront').addEventListener('click',function(){side='front';renderRacks();});
+    document.getElementById('sbRear').addEventListener('click',function(){if(!rearExists)return;side='rear';renderRacks();});
+    if(!RACKS.length){ var e=document.createElement('div');e.className='empty';e.innerHTML='No rack build yet.<br>Fill the RACK BUILD tab — component names with a U (e.g. LA4X 2u).';racksEl.appendChild(e);return; }
+    RACKS.forEach(function(rk,ri){
+      var items=rk.items.filter(function(it){return (it.side||'front')===side;});
+      var used=0; items.forEach(function(it){used+=(it.u||1);});
+      var card=document.createElement('section');card.className='rack';
+      var capTxt=rk.cap?(' / '+esc(rk.cap)):'';
+      card.innerHTML='<div class="rhead"><span class="rname">'+esc(rk.name)+'</span><span class="rused">'+used+'U used'+capTxt+' · '+side+'</span></div>';
+      var frame=document.createElement('div');frame.className='frame';
+      if(!items.length){ var nf=document.createElement('div');nf.className='rfree';nf.style.height='54px';nf.textContent='Nothing on the '+side;frame.appendChild(nf); }
+      items.forEach(function(it,ii){
+        var u=it.u||1;
+        var row=document.createElement('div');row.className='ublk';
+        row.style.height=(u*26)+'px';row.style.background=it.color||'#e5e7eb';
+        var ub=it.u?(it.u+'U'):'1U?';
+        var k='r'+ri+'_'+side+'_'+ii;
+        row.innerHTML='<span class="ord">'+(ii+1)+'</span><span class="bnm">'+esc(it.nm)+'</span><span class="bub">'+ub+'</span>';
+        if(rstate[k])row.classList.add('done');
+        row.addEventListener('click',function(){var on=row.classList.toggle('done');rstate[k]=on;rsave();if(navigator.vibrate)navigator.vibrate(on?18:8);});
+        frame.appendChild(row);
+      });
+      card.appendChild(frame);
+      racksEl.appendChild(card);
+    });
+  }
+  renderRacks();
+
+  // ---- TAB SWITCHING ----
+  var tbList=document.getElementById('tbList'),tbRack=document.getElementById('tbRack');
+  var vList=document.getElementById('view-list'),vRack=document.getElementById('view-rack'),pw=document.getElementById('progwrap'),gate=document.getElementById('gate');
+  function showView(v){
+    var isL=(v==='list');
+    vList.style.display=isL?'block':'none';
+    vRack.style.display=isL?'none':'block';
+    pw.style.display=isL?'block':'none';
+    gate.style.display=isL?'block':'none';
+    tbList.className='tb'+(isL?' active':'');
+    tbRack.className='tb'+(isL?'':' active');
+  }
+  tbList.addEventListener('click',function(){showView('list');});
+  tbRack.addEventListener('click',function(){showView('rack');});
+})();
+</script>
+</body>
+</html>
