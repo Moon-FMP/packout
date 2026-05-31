@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0a0d0f">
+<title>FMP Gig Compendium</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#0a0d0f;--panel:#14181c;--panel-2:#1b2127;--line:#272f37;--ink:#eef3f6;--ink-dim:#8b97a1;--ink-faint:#5a6670;--amber:#ffb627;--cyan:#34d3e0;--green:#3ddc84;--disp:"Oswald",system-ui,sans-serif;--body:"Archivo",system-ui,sans-serif;--mono:"JetBrains Mono",ui-monospace,monospace;}
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  body{background:var(--bg);color:var(--ink);font-family:var(--body);min-height:100vh;padding:0 0 60px;background-image:radial-gradient(circle at 50% -10%, rgba(255,182,39,.08), transparent 55%);}
+  header{position:sticky;top:0;z-index:50;background:linear-gradient(180deg,#0d1115 70%, rgba(13,17,21,.92));border-bottom:1px solid var(--line);padding:16px;backdrop-filter:blur(8px);}
+  h1{font-family:var(--disp);font-weight:700;font-size:22px;letter-spacing:.05em;text-transform:uppercase;}
+  h1 b{color:var(--amber);}
+  .sub{font-family:var(--mono);font-size:11px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.08em;margin-top:4px;}
+  main{padding:16px;max-width:760px;margin:0 auto;}
+  .new{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;text-decoration:none;font-family:var(--disp);font-weight:700;font-size:15px;letter-spacing:.08em;text-transform:uppercase;color:#1a1200;background:linear-gradient(135deg,var(--amber),#e09a10);border-radius:12px;padding:15px;margin-bottom:18px;}
+  .new:active{transform:scale(.99);}
+  .cnt{font-family:var(--mono);font-size:11px;color:var(--ink-dim);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;}
+  a.gig{display:flex;align-items:center;gap:14px;text-decoration:none;color:var(--ink);border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:18px 16px;margin-bottom:10px;transition:.15s;}
+  a.gig:active{background:var(--panel-2);}
+  a.gig .dot{width:10px;height:10px;border-radius:3px;background:var(--amber);flex-shrink:0;}
+  a.gig .nm{flex:1;font-family:var(--disp);font-weight:600;font-size:18px;letter-spacing:.02em;text-transform:uppercase;}
+  a.gig .fn{font-family:var(--mono);font-size:11px;color:var(--ink-faint);}
+  a.gig .arr{color:var(--ink-faint);font-size:18px;}
+  .msg{font-family:var(--mono);font-size:13px;color:var(--ink-faint);text-align:center;padding:40px 20px;line-height:1.7;}
+</style>
+</head>
+<body>
+<header>
+  <h1>Full<b>Moon</b> · Gig Compendium</h1>
+  <div class="sub">Every hosted pack-out, in one place</div>
+</header>
+<main>
+  <a class="new" href="builder.html">＋ New pack-out</a>
+  <div class="cnt" id="cnt"></div>
+  <div id="list"><div class="msg">Loading gigs…</div></div>
+</main>
+<script>
+var REPO='Moon-FMP/packout';
+var SYSTEM=['index.html','view.html','builder.html','gigs.html'];  // infra pages, not gigs
+function pretty(fn){
+  var base=fn.replace(/\.html$/i,'').replace(/[-_]+/g,' ').trim();
+  return base.replace(/\b\w/g,function(c){return c.toUpperCase();});
+}
+function render(files){
+  var listEl=document.getElementById('list'), cntEl=document.getElementById('cnt');
+  var gigs=files.filter(function(f){
+    return f.type==='file' && /\.html$/i.test(f.name) && SYSTEM.indexOf(f.name.toLowerCase())<0;
+  }).sort(function(a,b){return a.name<b.name?1:-1;});  // newest-ish by name desc
+  if(!gigs.length){ listEl.innerHTML='<div class="msg">No gigs hosted yet.<br>Build one and host it, and it shows up here automatically.</div>'; cntEl.textContent=''; return; }
+  cntEl.textContent=gigs.length+' gig'+(gigs.length===1?'':'s');
+  listEl.innerHTML='';
+  gigs.forEach(function(f){
+    var a=document.createElement('a'); a.className='gig'; a.href=f.name;
+    a.innerHTML='<span class="dot"></span><span class="nm">'+pretty(f.name)+'</span><span class="fn">'+f.name+'</span><span class="arr">→</span>';
+    listEl.appendChild(a);
+  });
+}
+fetch('https://api.github.com/repos/'+REPO+'/contents/')
+  .then(function(r){ if(!r.ok) throw new Error('GitHub API '+r.status); return r.json(); })
+  .then(render)
+  .catch(function(e){
+    document.getElementById('list').innerHTML='<div class="msg">Could not load the gig list ('+e.message+').<br>This page reads the repo file list from GitHub — if it is rate-limited, try again in a bit.</div>';
+  });
+</script>
+</body>
+</html>
