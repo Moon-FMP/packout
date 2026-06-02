@@ -381,6 +381,10 @@ function generateStandaloneHTML(title, subtitle, data, racks, subs){
   .cleared .csub{font-family:var(--mono);font-size:14px;color:var(--ink-dim);margin-top:16px;}
   .cleared button{margin-top:28px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font-family:var(--disp);font-weight:600;font-size:16px;letter-spacing:.06em;text-transform:uppercase;padding:13px 26px;border-radius:12px;cursor:pointer;}
   .empty{padding:46px 20px;text-align:center;font-family:var(--mono);color:var(--ink-faint);font-size:13px;line-height:1.6;}
+  .logi{padding:11px 16px;border-top:1px solid var(--line);background:rgba(52,211,224,.05);}
+  .logiaddr{display:inline-block;color:var(--cyan);text-decoration:none;font-size:13px;font-weight:600;}
+  .logitime{font-family:var(--mono);font-size:12px;color:var(--ink-dim);margin-top:4px;letter-spacing:.03em;}
+  .logic{font-size:12px;color:var(--ink-faint);margin-top:2px;}
 </style>
 </head>
 <body>
@@ -505,6 +509,14 @@ var STORE_KEY=${JSON.stringify(storeKey)};
     var head=document.createElement('div');head.className='cathead';
     head.innerHTML='<span class="cattick"></span><span class="ct">'+esc(group.cat)+'</span><span class="cn"><b class="cdone">0</b>/'+group.items.length+'</span><span class="chev">▼</span>';
     cat.appendChild(head);
+    if(group.addr||group.pickup||group.dropoff||group.contact){
+      var logi=document.createElement('div');logi.className='logi';var lh='';
+      if(group.addr) lh+='<a class="logiaddr" href="https://maps.google.com/?q='+encodeURIComponent(group.addr)+'" target="_blank" rel="noopener">📍 '+esc(group.addr)+'</a>';
+      var pd=[]; if(group.pickup)pd.push('Pickup '+esc(group.pickup)); if(group.dropoff)pd.push('Drop '+esc(group.dropoff));
+      if(pd.length) lh+='<div class="logitime">'+pd.join('  ·  ')+'</div>';
+      if(group.contact) lh+='<div class="logic">'+esc(group.contact)+'</div>';
+      logi.innerHTML=lh; cat.appendChild(logi);
+    }
     var items=document.createElement('div');items.className='items';
     group.items.forEach(function(it,ii){
       var k='s'+gi+'_'+ii;
